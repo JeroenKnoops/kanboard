@@ -44,6 +44,7 @@ class TaskImport extends Base
             'description'       => 'Description',
             'assignee'          => 'Assignee Username',
             'creator'           => 'Creator Username',
+            'date_started'      => 'Creation Date',
             'color'             => 'Color Name',
             'column'            => 'Column Name',
             'category'          => 'Category Name',
@@ -126,9 +127,13 @@ class TaskImport extends Base
             $values['date_due'] = $this->dateParser->getTimestampFromIsoFormat($row['date_due']);
         }
 
+        if (! empty($row['date_started'])) {
+            $values['date_started'] = $this->dateParser->getTimestampFromIsoFormat($row['date_started']);
+        }
+
         $this->removeEmptyFields(
             $values,
-            array('owner_id', 'creator_id', 'color_id', 'column_id', 'category_id', 'swimlane_id', 'date_due')
+            array('owner_id', 'creator_id', 'color_id', 'column_id', 'category_id', 'swimlane_id', 'date_due', 'date_started')
         );
 
         return $values;
