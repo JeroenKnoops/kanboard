@@ -6,8 +6,9 @@ use Kanboard\Integration\GitlabWebhook;
 use Kanboard\Model\TaskCreation;
 use Kanboard\Model\TaskFinder;
 use Kanboard\Model\Project;
-use Kanboard\Model\ProjectPermission;
+use Kanboard\Model\ProjectUserRole;
 use Kanboard\Model\User;
+use Kanboard\Core\Security\Role;
 
 class GitlabWebhookTest extends Base
 {
@@ -63,6 +64,35 @@ class GitlabWebhookTest extends Base
         $called = $this->container['dispatcher']->getCalledListeners();
         $this->assertArrayHasKey(GitlabWebhook::EVENT_ISSUE_OPENED.'.GitlabWebhookTest::onOpen', $called);
     }
+
+    public function testHandleIssueReopened()
+    {
+        $g = new GitlabWebhook($this->container);
+        $p = new Project($this->container);
+        $tc = new TaskCreation($this->container);
+        $tf = new TaskFinder($this->container);
+
+        $this->assertEquals(1, $p->create(array('name' => 'test')));
+        $g->setProjectId(1);
+
+        $this->container['dispatcher']->addListener(GitlabWebhook::EVENT_ISSUE_REOPENED, array($this, 'onReopen'));
+
+        $event = json_decode(file_get_contents(__DIR__.'/../fixtures/gitlab_issue_reopened.json'), true);
+
+        // Issue not there
+        $this->assertFalse($g->handleIssueReopened($event['object_attributes']));
+
+        $called = $this->container['dispatcher']->getCalledListeners();
+        $this->assertEmpty($called);
+
+        $this->assertEquals(1, $tc->create(array('title' => 'A', 'project_id' => 1, 'reference' => 355691)));
+        $task = $tf->getByReference(1, 355691);
+	$this->assertTrue($g->handleIssueReopened($event['object_attributes']));
+
+        $called = $this->container['dispatcher']->getCalledListeners();
+        $this->assertArrayHasKey(GitlabWebhook::EVENT_ISSUE_REOPENED.'.GitlabWebhookTest::onReopen', $called);
+    }
+
 
     public function testHandleIssueClosed()
     {
@@ -150,8 +180,8 @@ class GitlabWebhookTest extends Base
         $u = new User($this->container);
         $this->assertEquals(2, $u->create(array('username' => 'minicoders')));
 
-        $pp = new ProjectPermission($this->container);
-        $this->assertTrue($pp->addMember(1, 2));
+        $pp = new ProjectUserRole($this->container);
+        $this->assertTrue($pp->addUser(1, 2, Role::PROJECT_MEMBER));
 
         $g = new GitlabWebhook($this->container);
         $g->setProjectId(1);
@@ -170,6 +200,13 @@ class GitlabWebhookTest extends Base
         $this->assertEquals("There is a bug somewhere.\r\n\r\nBye\n\n[Gitlab Issue](https://gitlab.com/minicoders/test-webhook/issues/1)", $data['description']);
     }
 
+    public function onReopen($event)
+    {
+        $data = $event->getAll();
+        $this->assertEquals(1, $data['project_id']);
+        $this->assertEquals(1, $data['task_id']);
+        $this->assertEquals(355691, $data['reference']);
+    }
     public function onClose($event)
     {
         $data = $event->getAll();
@@ -184,7 +221,7 @@ class GitlabWebhookTest extends Base
         $this->assertEquals(1, $data['project_id']);
         $this->assertEquals(2, $data['task_id']);
         $this->assertEquals('test2', $data['title']);
-        $this->assertEquals("Fix bug #2\n\n[Commit made by @Fred on Gitlab](https://gitlab.com/minicoders/test-webhook/commit/48aafa75eef9ad253aa254b0c82c987a52ebea78)", $data['commit_comment']);
+        $this->assertEquals("Fix bug #2\n\n[Commit made by @Fred on Gitlab](https://gitlab.com/minicoders/test-webhook/commit/48aafa75eef9ad253aa254b0c82c987a52ebea78)", $data['comment']);
         $this->assertEquals("Fix bug #2", $data['commit_message']);
         $this->assertEquals('https://gitlab.com/minicoders/test-webhook/commit/48aafa75eef9ad253aa254b0c82c987a52ebea78', $data['commit_url']);
     }

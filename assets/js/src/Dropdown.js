@@ -34,6 +34,27 @@ Dropdown.prototype.listen = function() {
 
         clone.addClass('dropdown-submenu-open');
     });
+
+    $(document).on('click', '.dropdown-submenu-open li', function(e) {
+        if ($(e.target).is('li')) {
+            $(this).find('a:visible')[0].click(); // Calling native click() not the jQuery one
+        }
+    });
+
+    // User mention autocomplete
+    $('textarea[data-mention-search-url]').textcomplete([{
+        match: /(^|\s)@(\w*)$/,
+        search: function (term, callback) {
+            var url = $('textarea[data-mention-search-url]').data('mention-search-url');
+            $.getJSON(url, { q: term })
+                .done(function (resp) { callback(resp); })
+                .fail(function ()     { callback([]);   });
+        },
+        replace: function (value) {
+            return '$1@' + value + ' ';
+        },
+        cache: true
+    }], {className: "textarea-dropdown"});
 };
 
 Dropdown.prototype.close = function() {

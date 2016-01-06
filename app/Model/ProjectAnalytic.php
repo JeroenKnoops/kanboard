@@ -56,7 +56,7 @@ class ProjectAnalytic extends Base
         $metrics = array();
         $total = 0;
         $tasks = $this->taskFinder->getAll($project_id);
-        $users = $this->projectPermission->getMemberList($project_id);
+        $users = $this->projectUserRole->getAssignableUsersList($project_id);
 
         foreach ($tasks as $task) {
             $user = isset($users[$task['owner_id']]) ? $users[$task['owner_id']] : $users[0];
@@ -175,6 +175,51 @@ class ProjectAnalytic extends Base
         // Calculate average for each column
         foreach ($columns as $column_id => $column_title) {
             $stats[$column_id]['average'] = $stats[$column_id]['count'] > 0 ? (int) ($stats[$column_id]['time_spent'] / $stats[$column_id]['count']) : 0;
+        }
+
+        return $stats;
+    }
+
+    /**
+     * Get the time spent and estimated into each status
+     *
+     * @access public
+     * @param  integer   $project_id
+     * @return array
+     */
+    public function getHoursByStatus($project_id)
+    {
+        $stats = array();
+
+        // Get the times related to each task
+        $tasks = $this->db
+            ->table(Task::TABLE)
+            ->columns('id', 'time_estimated', 'time_spent', 'is_active')
+            ->eq('project_id', $project_id)
+            ->desc('id')
+            ->limit(1000)
+            ->findAll();
+
+        // Init values
+        $stats['closed'] = array(
+            'time_spent' => 0,
+            'time_estimated' => 0,
+        );
+
+        $stats['open'] = array(
+            'time_spent' => 0,
+            'time_estimated' => 0,
+        );
+
+        // Add times spent and estimated to each status
+        foreach ($tasks as &$task) {
+            if ($task['is_active']) {
+                $stats['open']['time_estimated'] += $task['time_estimated'];
+                $stats['open']['time_spent'] += $task['time_spent'];
+            } else {
+                $stats['closed']['time_estimated'] += $task['time_estimated'];
+                $stats['closed']['time_spent'] += $task['time_spent'];
+            }
         }
 
         return $stats;

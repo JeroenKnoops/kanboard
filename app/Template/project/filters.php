@@ -1,4 +1,6 @@
 <div class="page-header">
+    <?= $this->hook->render('template:project:header:before', array('project' => $project)) ?>
+
     <div class="dropdown">
         <i class="fa fa-caret-down"></i> <a href="#" class="dropdown-menu"><?= t('Actions') ?></a>
         <ul>
@@ -46,7 +48,7 @@
             <i class="fa fa-list fa-fw"></i>
             <?= $this->url->link(t('List'), 'listing', 'show', array('project_id' => $project['id'], 'search' => $filters['search']), false, 'view-listing', t('Keyboard shortcut: "%s"', 'v l')) ?>
         </li>
-        <?php if ($this->user->isProjectManagementAllowed($project['id'])): ?>
+        <?php if ($this->user->hasProjectAccess('gantt', 'project', $project['id'])): ?>
         <li <?= $filters['controller'] === 'gantt' ? 'class="active"' : '' ?>>
             <i class="fa fa-sliders fa-fw"></i>
             <?= $this->url->link(t('Gantt'), 'gantt', 'project', array('project_id' => $project['id'], 'search' => $filters['search']), false, 'view-gantt', t('Keyboard shortcut: "%s"', 'v g')) ?>
@@ -98,4 +100,6 @@
             </div>
         <?php endif ?>
     </div>
+
+    <?= $this->hook->render('template:project:header:after', array('project' => $project)) ?>
 </div>

@@ -6,8 +6,9 @@ use Kanboard\Integration\GithubWebhook;
 use Kanboard\Model\TaskCreation;
 use Kanboard\Model\TaskFinder;
 use Kanboard\Model\Project;
-use Kanboard\Model\ProjectPermission;
+use Kanboard\Model\ProjectUserRole;
 use Kanboard\Model\User;
+use Kanboard\Core\Security\Role;
 
 class GithubWebhookTest extends Base
 {
@@ -40,8 +41,8 @@ class GithubWebhookTest extends Base
         $u = new User($this->container);
         $this->assertEquals(2, $u->create(array('username' => 'fguillot')));
 
-        $pp = new ProjectPermission($this->container);
-        $this->assertTrue($pp->addMember(1, 2));
+        $pp = new ProjectUserRole($this->container);
+        $this->assertTrue($pp->addUser(1, 2, Role::PROJECT_MEMBER));
 
         $g = new GithubWebhook($this->container);
         $g->setProjectId(1);
@@ -111,8 +112,8 @@ class GithubWebhookTest extends Base
         $u = new User($this->container);
         $this->assertEquals(2, $u->create(array('username' => 'fguillot')));
 
-        $pp = new ProjectPermission($this->container);
-        $this->assertTrue($pp->addMember(1, 2));
+        $pp = new ProjectUserRole($this->container);
+        $this->assertTrue($pp->addUser(1, 2, ROLE::PROJECT_MANAGER));
 
         $g = new GithubWebhook($this->container);
         $g->setProjectId(1);
@@ -323,8 +324,8 @@ class GithubWebhookTest extends Base
         $u = new User($this->container);
         $this->assertEquals(2, $u->create(array('username' => 'fguillot')));
 
-        $pp = new ProjectPermission($this->container);
-        $this->assertTrue($pp->addMember(1, 2));
+        $pp = new ProjectUserRole($this->container);
+        $this->assertTrue($pp->addUser(1, 2, Role::PROJECT_MEMBER));
 
         $g = new GithubWebhook($this->container);
         $g->setProjectId(1);
@@ -452,7 +453,7 @@ class GithubWebhookTest extends Base
         $this->assertEquals(1, $data['project_id']);
         $this->assertEquals(1, $data['task_id']);
         $this->assertEquals('boo', $data['title']);
-        $this->assertEquals("Update README to fix #1\n\n[Commit made by @fguillot on Github](https://github.com/kanboardapp/webhook/commit/98dee3e49ee7aa66ffec1f761af93da5ffd711f6)", $data['commit_comment']);
+        $this->assertEquals("Update README to fix #1\n\n[Commit made by @fguillot on Github](https://github.com/kanboardapp/webhook/commit/98dee3e49ee7aa66ffec1f761af93da5ffd711f6)", $data['comment']);
         $this->assertEquals('Update README to fix #1', $data['commit_message']);
         $this->assertEquals('https://github.com/kanboardapp/webhook/commit/98dee3e49ee7aa66ffec1f761af93da5ffd711f6', $data['commit_url']);
     }

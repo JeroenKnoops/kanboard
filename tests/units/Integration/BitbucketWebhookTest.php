@@ -6,8 +6,9 @@ use Kanboard\Integration\BitbucketWebhook;
 use Kanboard\Model\TaskCreation;
 use Kanboard\Model\TaskFinder;
 use Kanboard\Model\Project;
-use Kanboard\Model\ProjectPermission;
+use Kanboard\Model\ProjectUserRole;
 use Kanboard\Model\User;
+use Kanboard\Core\Security\Role;
 
 class BitbucketWebhookTest extends Base
 {
@@ -108,8 +109,8 @@ class BitbucketWebhookTest extends Base
         $u = new User($this->container);
         $this->assertEquals(2, $u->create(array('username' => 'minicoders')));
 
-        $pp = new ProjectPermission($this->container);
-        $this->assertTrue($pp->addMember(1, 2));
+        $pp = new ProjectUserRole($this->container);
+        $this->assertTrue($pp->addUser(1, 2, Role::PROJECT_MEMBER));
 
         $g = new BitbucketWebhook($this->container);
         $g->setProjectId(1);
@@ -232,8 +233,8 @@ class BitbucketWebhookTest extends Base
         $u = new User($this->container);
         $this->assertEquals(2, $u->create(array('username' => 'minicoders')));
 
-        $pp = new ProjectPermission($this->container);
-        $this->assertTrue($pp->addMember(1, 2));
+        $pp = new ProjectUserRole($this->container);
+        $this->assertTrue($pp->addUser(1, 2, Role::PROJECT_MEMBER));
 
         $g = new BitbucketWebhook($this->container);
         $g->setProjectId(1);
@@ -318,7 +319,7 @@ class BitbucketWebhookTest extends Base
         $this->assertEquals(1, $data['project_id']);
         $this->assertEquals(2, $data['task_id']);
         $this->assertEquals('test2', $data['title']);
-        $this->assertEquals("Test another commit #2\n\n\n[Commit made by @Frederic Guillot on Bitbucket](https://bitbucket.org/minicoders/test-webhook/commits/824059cce7667d3f8d8780cc707391be821e0ea6)", $data['commit_comment']);
+        $this->assertEquals("Test another commit #2\n\n\n[Commit made by @Frederic Guillot on Bitbucket](https://bitbucket.org/minicoders/test-webhook/commits/824059cce7667d3f8d8780cc707391be821e0ea6)", $data['comment']);
         $this->assertEquals("Test another commit #2\n", $data['commit_message']);
         $this->assertEquals('https://bitbucket.org/minicoders/test-webhook/commits/824059cce7667d3f8d8780cc707391be821e0ea6', $data['commit_url']);
     }

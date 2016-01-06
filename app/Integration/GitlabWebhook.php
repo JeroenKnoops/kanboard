@@ -19,6 +19,7 @@ class GitlabWebhook extends \Kanboard\Core\Base
      */
     const EVENT_ISSUE_OPENED           = 'gitlab.webhook.issue.opened';
     const EVENT_ISSUE_CLOSED           = 'gitlab.webhook.issue.closed';
+    const EVENT_ISSUE_REOPENED         = 'gitlab.webhook.issue.reopened';
     const EVENT_COMMIT                 = 'gitlab.webhook.commit';
     const EVENT_ISSUE_COMMENT          = 'gitlab.webhook.issue.commented';
 
@@ -143,7 +144,7 @@ class GitlabWebhook extends \Kanboard\Core\Base
                 'task_id' => $task_id,
                 'commit_message' => $commit['message'],
                 'commit_url' => $commit['url'],
-                'commit_comment' => $commit['message']."\n\n[".t('Commit made by @%s on Gitlab', $commit['author']['name']).']('.$commit['url'].')'
+                'comment' => $commit['message']."\n\n[".t('Commit made by @%s on Gitlab', $commit['author']['name']).']('.$commit['url'].')'
             ) + $task)
         );
 
@@ -164,6 +165,8 @@ class GitlabWebhook extends \Kanboard\Core\Base
                 return $this->handleIssueOpened($payload['object_attributes']);
             case 'close':
                 return $this->handleIssueClosed($payload['object_attributes']);
+            case 'reopen':
+                return $this->handleIssueReopened($payload['object_attributes']);
         }
 
         return false;
@@ -192,6 +195,36 @@ class GitlabWebhook extends \Kanboard\Core\Base
 
         return true;
     }
+
+    /**
+     * Handle issue reopening
+     *
+     * @access public
+     * @param  array    $issue   Issue data
+     * @return boolean
+     */
+    public function handleIssueReopened(array $issue)
+    {
+        $task = $this->taskFinder->getByReference($this->project_id, $issue['id']);
+
+        if (! empty($task)) {
+            $event = array(
+                'project_id' => $this->project_id,
+                'task_id' => $task['id'],
+                'reference' => $issue['id'],
+            );
+
+            $this->container['dispatcher']->dispatch(
+                self::EVENT_ISSUE_REOPENED,
+                new GenericEvent($event)
+            );
+
+            return true;
+        }
+
+        return false;
+    }
+
 
     /**
      * Handle issue closing
@@ -240,7 +273,7 @@ class GitlabWebhook extends \Kanboard\Core\Base
         if (! empty($task)) {
             $user = $this->user->getByUsername($payload['user']['username']);
 
-            if (! empty($user) && ! $this->projectPermission->isMember($this->project_id, $user['id'])) {
+            if (! empty($user) && ! $this->projectPermission->isAssignable($this->project_id, $user['id'])) {
                 $user = array();
             }
 

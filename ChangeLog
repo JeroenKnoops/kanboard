@@ -1,20 +1,86 @@
-Version 1.0.21 (unreleased)
+Version 1.0.23 (unreleased)
 ---------------------------
 
 Breaking changes:
 
+* Plugin API changes for Automatic Actions
+* Automatic Action to close a task doesn't have the column parameter anymore (use the action "Close a task in a specific column")
+* Action name stored in the database is now the absolute class name
+
+New features:
+
+* Added support of user mentions (@username)
+* Added report to compare working hours between open and closed tasks
+* Added the possiblity to define custom routes from plugins
+* Added new method to remove metadata
+
+Improvements:
+
+* Improve Two-Factor activation and plugin API
+* Improving performance during task position change (SQL queries are 3 times faster than before)
+* Do not show window scrollbars when individual column scrolling is enabled
+* Automatic Actions code improvements and unit tests
+* Increase action name column length in actions table
+
+Bug fixes:
+
+* Fix compatiblity issue with FreeBSD for session.hash_function parameter
+* Fix wrong constant name that cause a PHP error in project management section
+* Fix pagination in group members listing
+* Avoid PHP error when enabling LDAP group provider with PHP < 5.5
+
+Version 1.0.22
+--------------
+
+Breaking changes:
+
+* LDAP configuration parameters changes (See documentation)
+* SQL table changes:
+    - "users" table: added new column "role" and removed columns "is_admin" and "is_project_admin"
+    - "project_has_users" table: replaced column "is_owner" with column "role"
+    - Sqlite does not support alter table, old columns still there but unused
+* API procedure changes:
+    - createUser
+    - createLdapUser
+    - updateUser
+    - updateTask
+* Event removed: "session.bootstrap", use "app.boostrap" instead
+
+New features:
+
+* Add pluggable authentication and authorization system (complete rewrite)
+* Add groups (teams/organization)
+* Add LDAP groups synchronization
+* Add project group permissions
+* Add new project role Viewer
+* Add generic LDAP client library
+* Add search query attribute for task link
+* Add the possibility to define API token in config file
+* Add capability to reopen Gitlab issues
+* Try to load config.php from /data if not available
+
+Version 1.0.21
+--------------
+
+Breaking changes:
+
 * Projects with duplicate name are now allowed:
-    For Postgres and Mysql the unique constraint is removed by database migration
-    However Sqlite does not support alter table, only new databases will have the unique constraint removed
+    - For Postgres and Mysql the unique constraint is removed by database migration
+    - However Sqlite does not support alter table, only new databases will have the unique constraint removed
 
 New features:
 
 * New automatic action: Assign a category based on a link
+* Added Bosnian translation
 
 Improvements:
 
+* Dropdown menu entry are now clickable outside of the html link
 * Improve error handling of plugins
 * Use PHP7 function random_bytes() to generate tokens if available
+* CSV task export show the assignee name in addition to the assignee username
+* Add new hooks for plugins
+* Remove workaround for "INSERT ON DUPLICATE KEY UPDATE..."
 
 Internal code refactoring:
 
@@ -29,6 +95,8 @@ Bug fixes:
 * Fix PHP error when adding a new user with email notification enabled
 * Add missing template for activity stream to show event "file.create"
 * Fix wrong value for PLUGINS_DIR in config.default.php
+* Make CSV export compatible with PHP 5.3
+* Avoid Safari to append .html at the end of downloaded files
 
 Version 1.0.20
 --------------

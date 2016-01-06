@@ -366,6 +366,33 @@ class Api extends PHPUnit_Framework_TestCase
         $this->assertEquals('Swimlane A', $swimlanes[2]['name']);
     }
 
+    public function testCreateTaskWithWrongMember()
+    {
+        $task = array(
+            'title' => 'Task #1',
+            'color_id' => 'blue',
+            'owner_id' => 1,
+            'project_id' => 1,
+            'column_id' => 2,
+        );
+
+        $task_id = $this->client->createTask($task);
+
+        $this->assertFalse($task_id);
+    }
+
+    public function testGetAllowedUsers()
+    {
+        $users = $this->client->getMembers(1);
+        $this->assertNotFalse($users);
+        $this->assertEquals(array(), $users);
+    }
+
+    public function testAddMember()
+    {
+        $this->assertTrue($this->client->allowUser(1, 1));
+    }
+
     public function testCreateTask()
     {
         $task = array(
@@ -504,6 +531,21 @@ class Api extends PHPUnit_Framework_TestCase
         $this->assertTrue($user_id > 0);
     }
 
+    public function testCreateManagerUser()
+    {
+        $user = array(
+            'username' => 'manager',
+            'name' => 'Manager',
+            'password' => '123456',
+            'role' => 'app-manager'
+        );
+
+        $user_id = $this->client->execute('createUser', $user);
+        $this->assertNotFalse($user_id);
+        $this->assertInternalType('int', $user_id);
+        $this->assertTrue($user_id > 0);
+    }
+
     /**
      * @expectedException InvalidArgumentException
      */
@@ -523,6 +565,10 @@ class Api extends PHPUnit_Framework_TestCase
         $this->assertNotFalse($user);
         $this->assertTrue(is_array($user));
         $this->assertEquals('toto', $user['username']);
+
+        $user = $this->client->getUser(3);
+        $this->assertNotEmpty($user);
+        $this->assertEquals('app-manager', $user['role']);
 
         $this->assertNull($this->client->getUser(2222));
     }
@@ -554,20 +600,13 @@ class Api extends PHPUnit_Framework_TestCase
         $this->assertEquals('titi@localhost', $user['email']);
     }
 
-    public function testGetAllowedUsers()
-    {
-        $users = $this->client->getMembers(1);
-        $this->assertNotFalse($users);
-        $this->assertEquals(array(), $users);
-    }
-
     public function testAllowedUser()
     {
         $this->assertTrue($this->client->allowUser(1, 2));
 
         $users = $this->client->getMembers(1);
         $this->assertNotFalse($users);
-        $this->assertEquals(array(2 => 'Titi'), $users);
+        $this->assertEquals(array(1 => 'admin', 2 => 'Titi'), $users);
     }
 
     public function testRevokeUser()
@@ -576,7 +615,7 @@ class Api extends PHPUnit_Framework_TestCase
 
         $users = $this->client->getMembers(1);
         $this->assertNotFalse($users);
-        $this->assertEquals(array(), $users);
+        $this->assertEquals(array(1 => 'admin'), $users);
     }
 
     public function testCreateComment()
@@ -836,7 +875,7 @@ class Api extends PHPUnit_Framework_TestCase
         $actions = $this->client->getAvailableActions();
         $this->assertNotEmpty($actions);
         $this->assertInternalType('array', $actions);
-        $this->assertArrayHasKey('TaskLogMoveAnotherColumn', $actions);
+        $this->assertArrayHasKey('\Kanboard\Action\TaskClose', $actions);
     }
 
     public function testGetAvailableActionEvents()
@@ -849,7 +888,7 @@ class Api extends PHPUnit_Framework_TestCase
 
     public function testGetCompatibleActionEvents()
     {
-        $events = $this->client->getCompatibleActionEvents('TaskClose');
+        $events = $this->client->getCompatibleActionEvents('\Kanboard\Action\TaskCloseColumn');
         $this->assertNotEmpty($events);
         $this->assertInternalType('array', $events);
         $this->assertArrayHasKey('task.move.column', $events);
@@ -857,7 +896,7 @@ class Api extends PHPUnit_Framework_TestCase
 
     public function testCreateAction()
     {
-        $action_id = $this->client->createAction(1, 'task.move.column', 'TaskClose', array('column_id' => 1));
+        $action_id = $this->client->createAction(1, 'task.move.column', '\Kanboard\Action\TaskCloseColumn', array('column_id' => 1));
         $this->assertNotFalse($action_id);
         $this->assertEquals(1, $action_id);
     }

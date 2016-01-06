@@ -3,21 +3,40 @@
 namespace Kanboard\Subscriber;
 
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
+use Kanboard\Core\Base;
 
-class BootstrapSubscriber extends \Kanboard\Core\Base implements EventSubscriberInterface
+class BootstrapSubscriber extends Base implements EventSubscriberInterface
 {
     public static function getSubscribedEvents()
     {
         return array(
-            'session.bootstrap' => array('setup', 0),
-            'api.bootstrap' => array('setup', 0),
-            'console.bootstrap' => array('setup', 0),
+            'app.bootstrap' => 'execute',
         );
     }
 
-    public function setup()
+    public function execute()
     {
         $this->config->setupTranslations();
         $this->config->setupTimezone();
+        $this->actionManager->attachEvents();
+
+        if ($this->userSession->isLogged()) {
+            $this->sessionStorage->hasSubtaskInProgress = $this->subtask->hasSubtaskInProgress($this->userSession->getId());
+        }
+    }
+
+    public function __destruct()
+    {
+        if (DEBUG) {
+            foreach ($this->db->getLogMessages() as $message) {
+                $this->logger->debug($message);
+            }
+
+            $this->logger->debug('SQL_QUERIES={nb}', array('nb' => $this->container['db']->nbQueries));
+            $this->logger->debug('RENDERING={time}', array('time' => microtime(true) - $this->request->getStartTime()));
+            $this->logger->debug('MEMORY='.$this->helper->text->bytes(memory_get_usage()));
+            $this->logger->debug('URI='.$this->request->getUri());
+            $this->logger->debug('###############################################');
+        }
     }
 }

@@ -35,6 +35,8 @@ class Config extends Setting
             'RSD' => t('RSD - Serbian dinar'),
             'SEK' => t('SEK - Swedish Krona'),
             'NOK' => t('NOK - Norwegian Krone'),
+            'BAM' => t('BAM - Konvertible Mark'),
+            'RUB' => t('RUB - Russian Ruble'),
         );
     }
 
@@ -69,6 +71,7 @@ class Config extends Setting
         // Sorted by value
         $languages = array(
             'id_ID' => 'Bahasa Indonesia',
+            'bs_BA' => 'Bosanski',
             'cs_CZ' => 'Čeština',
             'da_DK' => 'Dansk',
             'de_DE' => 'Deutsch',

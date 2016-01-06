@@ -5,14 +5,14 @@
 
         <!-- column in collapsed mode -->
         <div class="board-column-collapsed">
-            <span title="<?= t('Task count') ?>" class="board-column-header-task-count" title="<?= t('Show this column') ?>">
+            <span class="board-column-header-task-count" title="<?= t('Show this column') ?>">
                 <span id="task-number-column-<?= $column['id'] ?>"><?= $column['nb_tasks'] ?></span>
             </span>
         </div>
 
         <!-- column in expanded mode -->
         <div class="board-column-expanded">
-            <?php if (! $not_editable): ?>
+            <?php if (! $not_editable && $this->user->hasProjectAccess('taskcreation', 'create', $column['project_id'])): ?>
                 <div class="board-add-icon">
                     <?= $this->url->link('+', 'taskcreation', 'create', array('project_id' => $column['project_id'], 'column_id' => $column['id'], 'swimlane_id' => $swimlane['id']), false, 'popover', t('Add a new task')) ?>
                 </div>

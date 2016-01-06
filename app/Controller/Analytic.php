@@ -1,6 +1,7 @@
 <?php
 
 namespace Kanboard\Controller;
+use Kanboard\Model\Task as TaskModel;
 
 /**
  * Project Analytic controller
@@ -20,7 +21,7 @@ class Analytic extends Base
      */
     private function layout($template, array $params)
     {
-        $params['board_selector'] = $this->projectPermission->getAllowedProjects($this->userSession->getId());
+        $params['board_selector'] = $this->projectUserRole->getActiveProjectsByUser($this->userSession->getId());
         $params['content_for_sublayout'] = $this->template->render($template, $params);
 
         return $this->template->layout('analytic/layout', $params);
@@ -132,6 +133,9 @@ class Analytic extends Base
      * Common method for CFD and Burdown chart
      *
      * @access private
+     * @param string $template
+     * @param string $column
+     * @param string $title
      */
     private function commonAggregateMetrics($template, $column, $title)
     {
@@ -161,6 +165,34 @@ class Analytic extends Base
             'date_format' => $this->config->get('application_date_format'),
             'date_formats' => $this->dateParser->getAvailableFormats(),
             'title' => t($title, $project['name']),
+        )));
+    }
+
+    /**
+     * Show comparison between actual and estimated hours chart
+     *
+     * @access public
+     */
+    public function compareHours()
+    {
+        $project = $this->getProject();
+        $params = $this->getProjectFilters('analytic', 'compareHours');
+        $query = $this->taskFilter->search('status:all')->filterByProject($params['project']['id'])->getQuery();
+
+        $paginator = $this->paginator
+            ->setUrl('analytic', 'compareHours', array('project_id' => $project['id']))
+            ->setMax(30)
+            ->setOrder(TaskModel::TABLE.'.id')
+            ->setQuery($query)
+            ->calculate();
+
+        $stats = $this->projectAnalytic->getHoursByStatus($project['id']);
+
+        $this->response->html($this->layout('analytic/compare_hours', array(
+            'project' => $project,
+            'paginator' => $paginator,
+            'metrics' => $stats,
+            'title' => t('Compare hours for "%s"', $project['name']),
         )));
     }
 }
